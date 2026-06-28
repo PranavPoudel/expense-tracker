@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import datetime
 
 def load_expenses():
     if not os.path.exists("expenses.json"):
@@ -16,20 +17,53 @@ def save_expenses(expenses):
     with open("expenses.json","w") as file:
         json.dump(expenses,file,indent=2)
 
+def now():
+    return datetime.datetime.now().strftime("%Y-%m-%d")
+
 def add_expense(args):
-    print("adding")
+    loaded_expenses = load_expenses()
+    new_Id = max ((i['id'] for i in loaded_expenses),default=0)+1
+    date = now()
+    expense = {
+        "id": new_Id,
+        "date": date,
+        "description": args.description,
+        "amount": args.amount,
+    }
+    loaded_expenses.append(expense)
+    save_expenses(loaded_expenses)
+    print(f"sucessfully added expense id:{new_Id}")
+
 
 def delete_expense(args):
-    print("deleting")
+    loaded_expenses = load_expenses()
+    for i,expense in enumerate(loaded_expenses):
+        if expense['id'] == args.id:
+            del loaded_expenses[i]
+            print(f"Sucessfully deleted id {args.id}")
+            save_expenses(loaded_expenses)
+            return
+        print (f"Id not Found:{args.id}")
+
+
+def list_expense(args):
+    loaded_expenses= load_expenses()
+    if not loaded_expenses:
+        print("No expenses found")
+        return
+    print(f"{'ID':<5} {"Date":<12}{"Description":<20} {"Amount"}")
+
+    for e in loaded_expenses:
+        print(f"{e['id']:<5} {e['date']:<12} {e['description']:<20} ${e['amount']:.2f}")
+
 
 def update_expense(args):
-    print("updating")
+    
 
 def summary_expense(args):
     print ("summary")
 
-def list_expense(args):
-    print("listing")
+
 
 def parse_command():
     parser = argparse.ArgumentParser(description="tracks expenses")
@@ -47,6 +81,7 @@ def parse_command():
     # update
     update_parser = subparsers.add_parser("update")
     update_parser.add_argument("--id",required=True, type=int)
+    update_parser.add_argument("--description", required=False)
     update_parser.add_argument("--amount",required=False,type=float)
 
     #list
