@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 import datetime
-
+import calendar
 def load_expenses():
     if not os.path.exists("expenses.json"):
         return[]
@@ -51,19 +51,44 @@ def list_expense(args):
     if not loaded_expenses:
         print("No expenses found")
         return
-    print(f"{'ID':<5} {"Date":<12}{"Description":<20} {"Amount"}")
+    print(f"{'ID':<5} {'Date':<26}{"Description":<20} {"Amount"}")
 
     for e in loaded_expenses:
-        print(f"{e['id']:<5} {e['date']:<12} {e['description']:<20} ${e['amount']:.2f}")
+        print(f"{e['id']:<5} {e['date']:<26} {e['description']:<20} ${e['amount']:.2f}")
 
 
 def update_expense(args):
-    
+    loaded_expense = load_expenses()
+    for e in loaded_expense:
+        if e['id'] == args.id:
+            if args.description is not None:
+                e['description'] = args.description
+            if args.amount is not None:
+                e['amount'] = args.amount
+            save_expenses(loaded_expense)
+            print("Sucessfully updated the expense")
+            return
+    print("error: not found")
+    return
 
 def summary_expense(args):
-    print ("summary")
+    loaded_expense = load_expenses()
+    total_amount = 0
 
+    if args.month is not None:
+        current_year = datetime.datetime.now().year
+        for e in loaded_expense:
+            date_obj = datetime.datetime.strptime(e['date'],"%Y-%m-%d")
+            if date_obj.month == args.month and date_obj.year == current_year:
+                total_amount += e['amount']
 
+           
+        month_name = calendar.month_name[args.month]
+        print(f"Total expense for {month_name} : ${total_amount:.2f}")
+    else:
+        for e in loaded_expense:
+           total_amount += e['amount']
+        print(f"total expenses  ${total_amount:.2f}")
 
 def parse_command():
     parser = argparse.ArgumentParser(description="tracks expenses")
