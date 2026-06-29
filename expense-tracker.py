@@ -12,6 +12,12 @@ def load_expenses():
     except json.JSONDecodeError:
         print("error: expense.json is corrupted. Starting with empty json file")
         return []
+def check_amount(amount):
+    if amount < 0:
+        print ("amount can't be negative")
+        return False
+    return True
+
 
 def save_expenses(expenses):
     with open("expenses.json","w") as file:
@@ -24,6 +30,8 @@ def add_expense(args):
     loaded_expenses = load_expenses()
     new_Id = max ((i['id'] for i in loaded_expenses),default=0)+1
     date = now()
+    if not check_amount(args.amount):
+        return
     expense = {
         "id": new_Id,
         "date": date,
@@ -43,7 +51,7 @@ def delete_expense(args):
             print(f"Sucessfully deleted id {args.id}")
             save_expenses(loaded_expenses)
             return
-        print (f"Id not Found:{args.id}")
+    print (f"Id not Found:{args.id}")
 
 
 def list_expense(args):
@@ -51,7 +59,7 @@ def list_expense(args):
     if not loaded_expenses:
         print("No expenses found")
         return
-    print(f"{'ID':<5} {'Date':<26}{"Description":<20} {"Amount"}")
+    print(f"{'ID':<5} {'Date':<26}{'Description':<20} {'Amount'}")
 
     for e in loaded_expenses:
         print(f"{e['id']:<5} {e['date']:<26} {e['description']:<20} ${e['amount']:.2f}")
@@ -64,6 +72,8 @@ def update_expense(args):
             if args.description is not None:
                 e['description'] = args.description
             if args.amount is not None:
+                if not check_amount(args.amount):
+                    return
                 e['amount'] = args.amount
             save_expenses(loaded_expense)
             print("Sucessfully updated the expense")
@@ -76,6 +86,9 @@ def summary_expense(args):
     total_amount = 0
 
     if args.month is not None:
+        if not (1 <= args.month <= 12): 
+            print("Error: Invalid month") 
+            return    
         current_year = datetime.datetime.now().year
         for e in loaded_expense:
             date_obj = datetime.datetime.strptime(e['date'],"%Y-%m-%d")
@@ -117,11 +130,11 @@ def parse_command():
     summary_parser.add_argument("--month", required=False, type=int)
 
     args = parser.parse_args()
-    return args
+    return args, parser
 
 
 def main():
-    args =parse_command()
+    args, parser =parse_command()
     if args.command =="add":
         add_expense (args)
     elif args.command == "delete":
@@ -133,7 +146,8 @@ def main():
 
     elif args.command == "summary":
         summary_expense(args)
-
+    else:
+        parser.print_help()
 
         
 if __name__ == "__main__":
