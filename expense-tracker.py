@@ -3,6 +3,8 @@ import json
 import os
 import datetime
 import calendar
+import csv
+
 def load_expenses():
     if not os.path.exists("expenses.json"):
         return[]
@@ -103,6 +105,24 @@ def summary_expense(args):
            total_amount += e['amount']
         print(f"total expenses  ${total_amount:.2f}")
 
+
+def export_expense(args):
+    expenses = load_expenses()
+    if not expenses:
+        print("no Expenses to export")
+        return
+    with open (args.filename,"w",newline='') as file:
+        #getting dictionary keys to use as headers
+        headers = expenses[0].keys()
+        #initializing the writer
+        writer = csv.DictWriter(file, fieldnames=headers)
+
+        #writing the header row
+        writer.writeheader()
+        #writing the data row
+        writer.writerows(expenses)
+    
+
 def parse_command():
     parser = argparse.ArgumentParser(description="tracks expenses")
     subparsers = parser.add_subparsers(dest= "command")
@@ -129,6 +149,11 @@ def parse_command():
     summary_parser = subparsers.add_parser("summary")
     summary_parser.add_argument("--month", required=False, type=int)
 
+    #export
+    export_parser = subparsers.add_parser("export")
+    export_parser.add_argument("--filename",required= False, default="expenses.csv")
+
+
     args = parser.parse_args()
     return args, parser
 
@@ -146,6 +171,10 @@ def main():
 
     elif args.command == "summary":
         summary_expense(args)
+
+    elif args.command == "export":
+        export_expense(args)
+    
     else:
         parser.print_help()
 
